@@ -1,15 +1,11 @@
-CC	:= cc
-CFLAGS := -g -lsqlite3
+CC = cc
+CFLAGS = -Wall
+LDFLAGS = -lsqlite3
+OBJFILES = todo.o main.o
+TARGET = todo
 
-OBJ_DIR	:= obj
-BIN_DIR	:= bin
-OBJECTS	:= $(OBJ_DIR)/todo.o
-INCLUDE	:= -lsqlite3
-
-main: $(OBJECTS)
-	mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) $(OBJECTS) main.c -o $(BIN_DIR)/main
-
-$(OBJECTS): todo.c todo.h
-	mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c todo.c -o $(OBJ_DIR)/todo.o
+all: $(TARGET)
+$(TARGET): $(OBJFILES)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJFILES) $(LDFLAGS)
+clean:
+	rm -f $(OBJFILES) $(TARGET) *~
