@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include <time.h>
 
+extern char *strptime(const char *__restrict __s, const char *__restrict __fmt,
+                      struct tm *__tp);
+
 typedef uint64_t todo_id_t;
 
 typedef struct {
@@ -23,7 +26,7 @@ typedef struct {
 
 int init_db(sqlite3 *db);
 
-int get_user(sqlite3 *db, const char* name, user_t** puser);
+int get_user(sqlite3 *db, const char *name, user_t **puser);
 
 int add_user(sqlite3 *db, user_t *user);
 
