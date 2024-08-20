@@ -29,7 +29,29 @@ int init_db(sqlite3 *db) {
   return rc;
 }
 
-int get_user(sqlite3 *db, const char *name, user_t *user) {
+static void parse_user(sqlite3_stmt *stmt, user_t *puser) {
+  int cols = sqlite3_column_count(stmt);
+  const char *col;
+  const char *v;
+  for (int i = 0; i < cols; ++i) {
+    col = sqlite3_column_name(stmt, i);
+    if (strcmp("id", col) == 0) {
+      (puser)->id = sqlite3_column_int64(stmt, i);
+    } else if (strcmp("name", col) == 0) {
+      v = (char *)sqlite3_column_text(stmt, i);
+      (puser)->name = malloc((strlen(v) + 1) * sizeof(*v));
+      strcpy((puser)->name, v);
+    } else if (strcmp("create_tm", col) == 0) {
+      v = (char *)sqlite3_column_text(stmt, i);
+      strptime(v, "%Y-%m-%d %H:%M:%d", &(puser)->create_tm);
+    } else if (strcmp("update_tm", col) == 0) {
+      v = (char *)sqlite3_column_text(stmt, i);
+      strptime(v, "%Y-%m-%d %H:%M:%d", &(puser)->create_tm);
+    }
+  }
+}
+
+int get_user(sqlite3 *db, const char *name, user_t **puser) {
   int rc;
   sqlite3_stmt *stmt;
   char *q = "SELECT * FROM users WHERE name = ?;";
@@ -41,44 +63,19 @@ int get_user(sqlite3 *db, const char *name, user_t *user) {
     fprintf(stderr, "Cannot bind param %s\n", name);
     return rc;
   }
-
   if ((rc = sqlite3_step(stmt)) != SQLITE_DONE) {
-    int cols = sqlite3_column_count(stmt);
-    user = malloc(sizeof(*user));
-    const char *col;
-    const char *v;
-    for (int i = 0; i < cols; ++i) {
-      col = sqlite3_column_name(stmt, i);
-      if (strcmp("id", col) == 0) {
-        user->id = sqlite3_column_int64(stmt, i);
-      } else if (strcmp("name", col) == 0) {
-        v = sqlite3_column_text16(stmt, i);
-        user->name = malloc(strlen(v) + 1);
-        strcpy(user->name, v);
-      } else if (strcmp("create_tm", col) == 0) {
-        user->create_tm = sqlite3_column_int64(stmt, i);
-        /* printf("%s\n", v); */
-        /* strptime(v, "%Y-%m-%d %H:%M:%S", user->create_tm); */
-      } else if (strcmp("update_tm", col) == 0) {
-        /* v = sqlite3_column_text16(stmt, i); */
-        /* printf("%s\n", v); */
-        /* strptime(sqlite3_column_text16(stmt, i), "%Y-%m-%d %H:%M:%S", */
-        /*          user->update_tm); */
-        gmtime_r(sqlite3_column_int64(stmt, i), user->update_tm);
-      }
-    }
-  };
+    *puser = malloc(sizeof(**puser));
+    parse_user(stmt, *puser);
+  }
+
   sqlite3_finalize(stmt);
-  if (user)
-    printf("id: %ld, name: %s, create: %s, update: %s\n", (user)->id,
-           (user)->name, asctime(&user->create_tm), asctime(&user->update_tm));
-  return rc;
+  return rc = SQLITE_DONE;
 }
 
 int add_user(sqlite3 *db, user_t *user) {
   int rc;
   sqlite3_stmt *stmt = NULL;
-  char *sql = "INSERT INTO users (name) VALUES (?);";
+  char *sql = "INSERT INTO users (name) VALUES (?) RETURNING *;";
   if ((rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL)) != SQLITE_OK) {
     return rc;
   }
@@ -86,9 +83,8 @@ int add_user(sqlite3 *db, user_t *user) {
   if ((rc = sqlite3_bind_text(stmt, 1, user->name, -1, NULL)) != SQLITE_OK) {
     return rc;
   }
-
   if ((rc = sqlite3_step(stmt)) != SQLITE_DONE) {
-    return rc;
+    parse_user(stmt, user);
   }
 
   return sqlite3_finalize(stmt);

@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS = -Wall -std=c2x -D __USE_XOPEN
+CFLAGS = -Wall -std=c2x -D __USE_XOPEN=700 -g
 LDFLAGS = -lsqlite3
 OBJFILES = todo.o main.o
 TARGET = todo

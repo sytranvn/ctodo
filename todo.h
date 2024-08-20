@@ -23,7 +23,7 @@ typedef struct {
 
 int init_db(sqlite3 *db);
 
-int get_user(sqlite3 *db, const char* name, user_t* user);
+int get_user(sqlite3 *db, const char* name, user_t** puser);
 
 int add_user(sqlite3 *db, user_t *user);
 

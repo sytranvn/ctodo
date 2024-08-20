@@ -12,17 +12,23 @@ int main() {
   }
   user_t *user = NULL;
   char *username = getenv("USER");
-  if (get_user(db, username, user) == SQLITE_OK && user != NULL) {
-    printf("%ld %s\n", user->id, user->name);
+  if ((rc=get_user(db, username, &user) )== SQLITE_DONE && user != NULL) {
+      
+      printf("Hi, %s\n", user->name);
   } else {
     user = malloc(sizeof(*user));
 
     user->name = username;
-    user->pass = "Hi";
+    user->pass = "42";
     if ((rc = add_user(db, user)) != SQLITE_OK) {
       fprintf(stderr, "Add user failed with error code %d\n", rc);
+    } else {
+      printf("Created user %s, id: %ld\n", user->name, user->id);
     }
   }
+
+
   sqlite3_close(db);
+  free(user);
   return 0;
 }
